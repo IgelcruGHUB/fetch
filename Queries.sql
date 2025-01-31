@@ -39,9 +39,32 @@ WHERE rewardsReceiptStatus IN ('Accepted', 'Rejected')
 GROUP BY rewardsReceiptStatus;
 
 -- Which brand has the most spend among users who were created within the past 6 months?
-
+WITH RecentUsers AS (
+    SELECT user_id
+    FROM Users_Dimension
+    WHERE createdDate >= DATE_SUB((SELECT MAX(date) FROM Time_Dimension), INTERVAL 6 MONTH)
+)
+SELECT b.name AS brand_name, SUM(r.totalSpent) AS total_spent
+FROM Receipts_Fact_Table r
+JOIN RecentUsers u ON r.user_id = u.user_id
+JOIN Item_Dimension i ON r.receipt_id = i.receipt_id
+JOIN Brands_Dimension b ON i.brand_id = b.brand_id
+GROUP BY b.brand_id
+ORDER BY total_spent DESC
+LIMIT 1;
 
 
 -- Which brand has the most transactions among users who were created within the past 6 months?
-
-
+WITH RecentUsers AS (
+    SELECT user_id
+    FROM Users_Dimension
+    WHERE createdDate >= DATE_SUB((SELECT MAX(date) FROM Time_Dimension), INTERVAL 6 MONTH)
+)
+SELECT b.name AS brand_name, COUNT(i.item_id) AS transaction_count
+FROM Receipts_Fact_Table r
+JOIN RecentUsers u ON r.user_id = u.user_id
+JOIN Item_Dimension i ON r.receipt_id = i.receipt_id
+JOIN Brands_Dimension b ON i.brand_id = b.brand_id
+GROUP BY b.brand_id
+ORDER BY transaction_count DESC
+LIMIT 1;
